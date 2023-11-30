@@ -97,7 +97,7 @@ describe("Pool scenarios test", function () {
     //   
       /**prize/player = 7,5e8 = 750,000,000 */
       await printParams(3, signers[3].address, 4);
-      await pool.connect(signers[3]).withdraw(signers[3].address, 4);
+      await pool.connect(signers[3]).withdraw(4);
       expect(await asset.balanceOf(signers[3].address)).to.eq(1e10+750000000);
     //   
     //   await pool.connect(signers[4]).withdraw(signers[4].address, 4);
@@ -122,7 +122,7 @@ describe("Pool scenarios test", function () {
       for(let i=0; i<signers.length; i++) {
         // const prize = await printParams(i, signers[i].address, 1);
         // prizes.push(prize);
-        await pool.connect(signers[i]).withdraw(signers[i].address, 1);
+        await pool.connect(signers[i]).withdraw(1);
         bal = await asset.balanceOf(signers[i].address)
         console.log(`balance of player ${i}: ${bal}`);
       }
@@ -151,7 +151,7 @@ describe("Pool scenarios test", function () {
       await printParams(19, signers[19].address, 1 );
       let bal: bigint;
       for(let i=0; i<signers.length; i++) {
-        await pool.connect(signers[i]).withdraw(signers[i].address, 1);
+        await pool.connect(signers[i]).withdraw(1);
         bal = await asset.balanceOf(signers[i].address)
         console.log(`balance of player ${i}: ${bal}`);
       }
@@ -177,23 +177,23 @@ describe("Pool scenarios test", function () {
       let bal: bigint;
       console.log('========LOSERS=========')
       for(let i=0; i<players-3; i++) {
-        await pool.connect(signers[i]).withdraw(signers[i].address, i+1);
+        await pool.connect(signers[i]).withdraw(i+1);
         bal = await asset.balanceOf(signers[i].address)
         console.log(`balance of player ${i}: ${bal}`);
       }
       console.log('\n========WINNERS=========')
-      await pool.connect(signers[17]).withdraw(signers[17].address, 19);
+      await pool.connect(signers[17]).withdraw(19);
       bal = await asset.balanceOf(signers[17].address);
       console.log(`balance of player 17: ${bal}`);
-      await pool.connect(signers[18]).withdraw(signers[18].address, 19);
+      await pool.connect(signers[18]).withdraw(19);
       bal = await asset.balanceOf(signers[18].address);
       console.log(`balance of player 18: ${bal}`);
       console.log('\nmore yield...');
       await vault.generateYield(200);
-      await pool.connect(signers[19]).withdraw(signers[19].address, 19);
+      await pool.connect(signers[19]).withdraw(19);
       bal = await asset.balanceOf(signers[19].address);
       console.log(`balance of player 19: ${bal}`);
-      await pool.connect(signers[0]).withdraw(signers[0].address, 0);
+      await pool.connect(signers[0]).withdraw(0);
       bal = await asset.balanceOf(poolAddr);
       console.log(`pool balance: ${bal}`);
     });
@@ -221,27 +221,27 @@ describe("Pool scenarios test", function () {
     //   await printParams(19, signers[19].address, 1 );
       let bal: bigint;
       console.log('\n========WINNERS=========')
-      await pool.connect(signers[17]).withdraw(signers[17].address, 19);
+      await pool.connect(signers[17]).withdraw(19);
       bal = await asset.balanceOf(signers[17].address);
       console.log(`balance of player 17: ${bal}`);
-      await pool.connect(signers[18]).withdraw(signers[18].address, 19);
+      await pool.connect(signers[18]).withdraw(19);
       bal = await asset.balanceOf(signers[18].address);
       console.log(`balance of player 18: ${bal}`);
       console.log('\n===LEACH===');
     //   await printParams(19, signers[19].address, 19);
     //   return   
-      await pool.connect(signers[19]).withdraw(signers[19].address, 19);
+      await pool.connect(signers[19]).withdraw(19);
       bal = await asset.balanceOf(signers[19].address);
       console.log(`balance of player 19: ${bal}`);     
       console.log('========LOSERS=========')
       for(let i=0; i<players-3; i++) {
-        await pool.connect(signers[i]).withdraw(signers[i].address, i+1);
+        await pool.connect(signers[i]).withdraw(i+1);
         bal = await asset.balanceOf(signers[i].address)
         console.log(`balance of player ${i}: ${bal}`);
       }
       console.log('sponsorship:', await pool.getStake(signers[0].address,0));
       console.log('pool balance:', await asset.balanceOf(vaultAddr));
-      await pool.connect(signers[0]).withdraw(signers[0].address, 0);   
+      await pool.connect(signers[0]).withdraw(0);   
     });
     it("#6: lower tvl", async() => {
         //   const players = signers.length;
@@ -276,7 +276,7 @@ describe("Pool scenarios test", function () {
           /**prize/player = 0 */
           for(let i=5; i<7; i++) {
             // await printParams(i, signers[i].address, i);
-            await pool.connect(signers[i]).withdraw(signers[i].address, i);
+            await pool.connect(signers[i]).withdraw(i);
             expect(await asset.balanceOf(signers[i].address)).to.eq(25);
           }
           await printParams(7, signers[7].address, 8);
@@ -318,13 +318,13 @@ describe("Pool scenarios test", function () {
       /**prize/player = 0 */
       for(let i=5; i<7; i++) {
         // await printParams(i, signers[i].address, i);
-        await pool.connect(signers[i]).withdraw(signers[i].address, i);
+        await pool.connect(signers[i]).withdraw(i);
         expect(await asset.balanceOf(signers[i].address)).to.eq(225);
       }
       await printParams(7, signers[7].address, 8);
-      await pool.connect(signers[7]).withdraw(signers[7].address, 8);
+      await pool.connect(signers[7]).withdraw(8);
       console.log("7 bal:", await asset.balanceOf(signers[7].address));
-      await pool.connect(signers[8]).withdraw(signers[8].address, 8);
+      await pool.connect(signers[8]).withdraw(8);
       console.log("8 bal:", await asset.balanceOf(signers[8].address));
       console.log('pool bal:', await asset.balanceOf(vaultAddr))
     //
@@ -358,32 +358,32 @@ describe("Pool scenarios test", function () {
       let bal: bigint;
     //   19
       await printParams(19, signers[19].address, 19);
-      await pool.withdraw(signers[19].address, 19);
+      await pool.connect(signers[19]).withdraw(19);
       const bal19 = await asset.balanceOf(signers[19].address)
       console.log('19 bal', bal19);
     //   18
       await printParams(18, signers[18].address, 19);
-      await pool.withdraw(signers[18].address, 19);
+      await pool.connect(signers[18]).withdraw(19);
       console.log('18 bal', await asset.balanceOf(signers[18].address));
       console.log('\n======LOSERS======')
       for(let i=0; i<players-5; i++) {
         // const prize = await printParams(i, signers[i].address, 1);
         // prizes.push(prize);
-        await pool.connect(signers[i]).withdraw(signers[i].address, i);
+        await pool.connect(signers[i]).withdraw(i);
         bal = await asset.balanceOf(signers[i].address)
         console.log(`balance of player ${i}: ${bal}`);
       }
     //   17
       await printParams(17, signers[17].address, 19);
-      await pool.withdraw(signers[17].address, 19);
+      await pool.connect(signers[17]).withdraw(19);
       console.log('17 bal', await asset.balanceOf(signers[17].address));
     //   16
       await printParams(16, signers[16].address, 19);
-      await pool.withdraw(signers[16].address, 19);
+      await pool.connect(signers[16]).withdraw(19);
       console.log('16 bal', await asset.balanceOf(signers[16].address));
     // 15
       await printParams(15, signers[15].address, 19);
-      await pool.withdraw(signers[15].address, 19);
+      await pool.connect(signers[15]).withdraw(19);
       const bal15 = await asset.balanceOf(signers[15].address);
       console.log('15 bal', bal15);
       

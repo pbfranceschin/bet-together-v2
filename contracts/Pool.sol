@@ -22,7 +22,7 @@ contract Pool {
 
     // event PoolClosed (uint16 outcome, uint256 totalStakes, uint256 totalYield);
 
-    event Withdrawn (address indexed owner, uint16 outcome, uint256 amount);
+    event Withdrawn (address indexed owner, uint16 outcome, uint256 stake, uint256 prize);
 
     mapping (address => mapping(uint16 => uint256)) private _stakes;
 
@@ -86,6 +86,7 @@ contract Pool {
      * @dev uses ERC4626 API to account for deposits. The contract retains all the shares and uses internal accounting logic.
      */
     function stake(uint16 outcome, uint256 amount) external OnlyIfOpen {
+        require(amount <= maxDeposit(), "Amount too big.");
         require(asset.allowance(msg.sender, address(this)) >= amount, "Not enough allowance.");
         require(outcome < resultController.getOutcomesCount(), "Invalid pick");
 
@@ -105,6 +106,7 @@ contract Pool {
      * @notice exact amount can be withdrawn via unStake.
      */
     function sponsor(uint256 amount) external OnlyIfOpen {
+        require(amount <= maxDeposit(), "Amount too big.");
         require(asset.allowance(msg.sender, address(this)) >= amount, "Not enough allowance.");
 
         asset.transferFrom(msg.sender, address(this), amount);
@@ -124,6 +126,7 @@ contract Pool {
      */
     function unStake(uint16 outcome, uint256 amount) external OnlyIfOpen /* put REENTRANCY GUARD */ { 
         require(amount <= _stakes[msg.sender][outcome], "Not enough stake, adjust amount.");
+        require(amount <= maxWithdraw(msg.sender, outcome), "Amount too big.");
 
         _stakes[msg.sender][outcome] -= amount;
         totalStakes -= amount;
@@ -166,29 +169,35 @@ contract Pool {
      * pulls balance from the pool after closing.
      * @notice needs to be called for each outcome picked.
      */
-    function withdraw(address owner, uint16 outcome) external {
+    function withdraw(uint16 outcome) external {
         require(hasResult(), "Pool is still open! Use unStake()");
-        uint256 shares = _shares[owner][outcome];
+        uint256 shares = _shares[msg.sender][outcome];
         require(shares != 0, "Nothing to withdraw. Adjust outcome.");
-        uint256 stake_ = _stakes[owner][outcome];
+        uint256 stake_ = _stakes[msg.sender][outcome];
         if(outcome == resultController.getResult()){ /**includes prize */
             uint256 prize = previewPrize(outcome, shares, stake_);
-            _shares[owner][outcome] = 0;
+            _shares[msg.sender][outcome] = 0;
             totalStakes -= stake_;
-            vaultAPI.withdraw(prize + stake_, owner, address(this));
+            vaultAPI.withdraw(prize + stake_, msg.sender, address(this));
             yieldWithdrawn += prize;
-            emit Withdrawn(owner, outcome, prize + stake_);
+            emit Withdrawn(msg.sender, outcome, prize, stake_);
             return;
         }
-        _shares[owner][outcome] = 0;
+        _shares[msg.sender][outcome] = 0;
         totalStakes -= stake_;
         uint256 totAss = vaultAPI.totalAssets();
-        vaultAPI.withdraw(stake_ < totAss ? stake_ : totAss, owner, address(this));
-        emit Withdrawn(owner, outcome, stake_);
+        vaultAPI.withdraw(stake_ < totAss ? stake_ : totAss, msg.sender, address(this));
+        emit Withdrawn(msg.sender, outcome, 0, stake_);
     }
 
     /**GETTERS */
 
+    /**
+     * @notice returns the value of the current prize if the oucome provided was the end result.
+     * @param outcome the outcome predicted to be the end result.
+     * @param shares number of shares related to `outcome`.
+     * @param stake_ amount staked in `outcome`.
+     */
     function previewPrize(uint16 outcome, uint256 shares, uint256 stake_) public view returns(uint256) {
         uint256 totalYield = getYield() + yieldWithdrawn;
         uint256 indYield = _safeSub(vaultAPI.convertToAssets(shares), stake_);

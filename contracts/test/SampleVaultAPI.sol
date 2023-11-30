@@ -82,9 +82,14 @@ contract SampleVaultAPI is IERC4626, ERC20 {
 
     function previewDeposit(uint256 assets) external view returns (uint256) {}
 
-    function maxDeposit(address) external view returns (uint256) {}
+    function maxDeposit(address) external pure returns (uint256) {
+        return type(uint256).max;
+    }
 
-    function maxWithdraw(address owner) external view returns (uint256) {}
+    function maxWithdraw(address owner) external view returns (uint256) {
+        uint256 maxWithdrawable = asset.balanceOf(address(vault));
+        return maxWithdrawable == 0 ? 0 : maxWithdrawable.min(convertToAssets(balanceOf(owner)));
+    }
 
 
 }
