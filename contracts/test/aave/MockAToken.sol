@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.10;
+
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract MockAToken is ERC20 {
+    address internal _underlyingAsset;
+
+    constructor(address underlyingAsset) ERC20("Mock aToken", "MAT") {
+        _underlyingAsset = underlyingAsset;
+    }
+
+    function mint(address caller, address onBehalfOf, uint256 amount, uint256 index) external returns (bool) {
+        caller;
+        index;
+        _mint(onBehalfOf, amount);
+        return true;
+    }
+
+    function burn(address from, address receiverOfUnderlying, uint256 amount, uint256 index) external {
+        index;
+        _burn(from, amount);
+        if (receiverOfUnderlying != address(this)) {
+            ERC20(_underlyingAsset).transfer(receiverOfUnderlying, amount);
+        }
+    }
+
+    function scaledTotalSupply() public view returns (uint256) {
+        return totalSupply();
+    }
+}

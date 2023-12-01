@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import "../BaseResultController.sol";
 
-contract SampleController is BaseResultController {
+contract MockController is BaseResultController {
 
     address public owner;
 

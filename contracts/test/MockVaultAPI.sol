@@ -2,21 +2,21 @@
 pragma solidity ^0.8.19;
 
 import "../interfaces/IERC4626.sol";
-import "./SampleVault.sol";
+import "./MockVault.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../libs/FixedPointMathLib.sol";
 
-contract SampleVaultAPI is IERC4626, ERC20 {
+contract MockVaultAPI is IERC4626, ERC20 {
     using FixedPointMathLib for uint256;
     
-    SampleVault immutable vault;
+    MockVault immutable vault;
 
     ERC20 immutable asset;
 
     uint256 constant exRate = 1e6;
 
     constructor(address _vault, address _asset) ERC20("VaultShares", "VLTS") {
-        vault = SampleVault(_vault);
+        vault = MockVault(_vault);
         asset = ERC20(_asset);
         asset.approve(_vault, type(uint256).max);
         // _mint(address(this),1e6);

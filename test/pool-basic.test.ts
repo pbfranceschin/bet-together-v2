@@ -1,11 +1,11 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Pool, SampleAsset, SampleVault, SampleVaultAPI, SampleController } from "../typechain-types";
+import { Pool, MockAsset, MockVault, MockVaultAPI, MockController } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { makeOutcomes, deployAsset, deployPool, deployResultContr, deployVault, deployVaultAPI } from "./test-utils";
 
 describe.skip("Pool basic test", function () {
-  let pool: Pool, vApi: SampleVaultAPI, resContr: SampleController , asset:SampleAsset, vault:SampleVault;
+  let pool: Pool, vApi: MockVaultAPI, resContr: MockController , asset:MockAsset, vault:MockVault;
   let assAddr: string, vaultAddr: string, vApiAddr: string, resContrAddr:string, poolAddr:string;
   let owner: SignerWithAddress, signer1: SignerWithAddress, signer2: SignerWithAddress, signer3: SignerWithAddress, signer4: SignerWithAddress;
   // let provider = ethers.provider;
@@ -25,7 +25,8 @@ describe.skip("Pool basic test", function () {
     pool = await deployPool(signer1, assAddr, resContrAddr, vApiAddr);
     poolAddr = await pool.getAddress();
 
-    expect(await asset.balanceOf(owner)).to.eq(1e6);
+    // expect(await asset.balanceOf(owner)).to.eq(1e6);
+    await asset.mint(owner, 1e6);
     await asset.mint(signer1, 1e4);
     await asset.mint(signer2, 1e4);
     await asset.mint(signer3, 1e4);
@@ -114,21 +115,21 @@ describe.skip("Pool basic test", function () {
     expect(await asset.balanceOf(signer3.address)).to.eq(0);
     expect(await asset.balanceOf(signer4.address)).to.eq(0);
     /**sponsor -> bal = 1e6 */
-    await pool.connect(owner).withdraw(owner.address, 0);
+    await pool.connect(owner).withdraw(0);
     expect(await asset.balanceOf(owner.address)).to.eq(1e6);
     /**losers -> bal = 1e4 */
-    await pool.connect(signer1).withdraw(signer1.address, 1);
+    await pool.connect(signer1).withdraw(1);
     expect(await asset.balanceOf(signer1.address)).to.eq(1e4);
-    await pool.connect(signer2).withdraw(signer2.address, 2);
+    await pool.connect(signer2).withdraw(2);
     expect(await asset.balanceOf(signer2.address)).to.eq(1e4);
-    await pool.connect(signer3).withdraw(signer3.address, 3);
+    await pool.connect(signer3).withdraw(3);
     expect(await asset.balanceOf(signer3.address)).to.eq(1e4);
     /**winner -> bal = (1 + 3.12) * 1e4 = 41,200 */
-    await pool.connect(signer4).withdraw(signer4.address, 4);
+    await pool.connect(signer4).withdraw(4);
     expect(await asset.balanceOf(signer4.address)).to.eq(41200);
   });
 
   it("Should not allow withdrawing when pool is open", async function () {
-    await expect(pool.connect(signer1).withdraw(signer1.address, 1)).to.be.revertedWith("Pool is still open! Use unStake()");
+    await expect(pool.connect(signer1).withdraw(1)).to.be.revertedWith("Pool is still open! Use unStake()");
   });
 });

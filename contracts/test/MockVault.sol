@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "./SampleAsset.sol";
+import "./MockAsset.sol";
 
-contract SampleVault {
+contract MockVault {
 
-    SampleAsset public immutable asset;
+    MockAsset public immutable asset;
 
     constructor(address _asset) {
-        asset = SampleAsset(_asset);
+        asset = MockAsset(_asset);
     }
 
     function deposit(uint256 amount) external {

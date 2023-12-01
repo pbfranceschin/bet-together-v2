@@ -3,9 +3,9 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract SampleAsset is ERC20 {
+contract MockAsset is ERC20 {
 
-    constructor() ERC20("Sample", "SMPL") {
+    constructor() ERC20("Mock", "MCK") {
         // _mint(msg.sender, 1e12);
     }
 
