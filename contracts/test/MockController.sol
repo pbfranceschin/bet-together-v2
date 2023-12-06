@@ -23,8 +23,8 @@ contract MockController is BaseResultController {
         return _game;
     }
 
-    function generateResult(uint16 r) external onlyOwner {
-        setResult(r);
+    function generateResult(uint16 r) external {
+        _setResult(r);
     }
 
 

@@ -215,7 +215,7 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
         console.log(`balance of player ${i}: ${bal}`);
       }
     });
-    it('#4: leave stake in the pool after closing', async() => {
+    it.skip('#4: leave stake in the pool after closing', async() => {
       const players = signers.length;
       for(let i=5; i<players; i++) {
         await asset.mint(signers[i].address, 1e10);
@@ -291,54 +291,73 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
       console.log(`pool balance: ${bal}`);
     });
     it.skip("#5: yield-leach attack", async() => {
-      const players = signers.length;
-      for(let i=5; i<players; i++) {
-        await asset.mint(signers[i].address, 1e10);
-        await asset.connect(signers[i]).approve(poolAddr, ethers.MaxUint256);
-      }
-      await pool.connect(signers[0]).sponsor(1e10);
-    //   console.log(
-    //     'sponsorship:', await pool.getStake(signers[0].address,0), 
-    //     '\npool bal:', await asset.balanceOf(vaultAddr)
-    //   )
-      await asset.mint(signers[0].address, 1e10);
-      for(let i=0; i<players-3; i++) {
-        await pool.connect(signers[i]).stake(i+1, 1e10);
-      }
-      await pool.connect(signers[17]).stake(19, 1e10);
-      await pool.connect(signers[18]).stake(19, 1e10);
-      await vault.generateYield(300);
-      await pool.connect(signers[19]).stake(19, 1e10);
-      await resContr.connect(signers[0]).generateResult(19);
-    //   await printParams(0, signers[0].address, 1 );
-    //   await printParams(19, signers[19].address, 1 );
-      let bal: bigint;
-      console.log('\n========WINNERS=========')
-      await pool.connect(signers[17]).withdraw(19);
-      bal = await asset.balanceOf(signers[17].address);
-      console.log(`balance of player 17: ${bal}`);
-      await pool.connect(signers[18]).withdraw(19);
-      bal = await asset.balanceOf(signers[18].address);
-      console.log(`balance of player 18: ${bal}`);
-      console.log('\n===LEACH===');
-    //   await printParams(19, signers[19].address, 19);
-    //   return   
-      await pool.connect(signers[19]).withdraw(19);
-      bal = await asset.balanceOf(signers[19].address);
-      console.log(`balance of player 19: ${bal}`);     
-      console.log('========LOSERS=========')
-      for(let i=0; i<players-3; i++) {
-        await pool.connect(signers[i]).withdraw(i+1);
-        bal = await asset.balanceOf(signers[i].address)
-        console.log(`balance of player ${i}: ${bal}`);
-      }
-      console.log('sponsorship:', await pool.getStake(signers[0].address,0));
-      console.log('pool balance:', await asset.balanceOf(vaultAddr));
-      await pool.connect(signers[0]).withdraw(0);   
+        const players = signers.length;
+        const stake = BigInt(1e10)
+        for(let i=5; i<players; i++) {
+          await asset.mint(signers[i].address, stake);
+          await asset.connect(signers[i]).approve(poolAddr, ethers.MaxUint256);
+        }
+        await pool.connect(signers[0]).sponsor(stake);
+      //   console.log(
+      //     'sponsorship:', await pool.getStake(signers[0].address,0), 
+      //     '\npool bal:', await asset.balanceOf(vaultAddr)
+      //   )
+        await asset.mint(signers[0].address, stake);
+        for(let i=0; i<players-3; i++) {
+          await pool.connect(signers[i]).stake(i+1, stake);
+        }
+        await pool.connect(signers[17]).stake(19, stake);
+        await pool.connect(signers[18]).stake(19, stake);
+        expect(await vApi.totalAssets()).to.eq(BigInt(players)*stake);
+        await vault.simulateYield(vApiAddr, 300);
+        const yield_ = await pool.getYield();
+        expect(yield_).to.eq(BigInt(players)*stake*BigInt(3)/BigInt(100));
+      //   LEACH
+        await pool.connect(signers[19]).stake(19, stake);
+      //
+        await resContr.connect(signers[0]).generateResult(19);
+        const prize  = yield_/BigInt(2);
+      //   console.log('yield/2'; )
+      //   await printParams(0, signers[0].address, 1 );
+      //   await printParams(19, signers[19].address, 1 );
+        let bal: bigint;
+        console.log('\n========WINNERS=========')
+        console.log('prize+stake:', prize+stake);
+        await printParams(17, signers[17].address, 19);
+        await pool.connect(signers[17]).withdraw(19);
+        bal = await asset.balanceOf(signers[17].address);
+      //   expect(bal).to.eq(prize+stake);
+        console.log(`balance of player 17: ${bal}`);
+      //   return
+        await printParams(18, signers[18].address, 19);
+        await pool.connect(signers[18]).withdraw(19);
+        bal = await asset.balanceOf(signers[18].address);
+      //   expect(bal).to.eq(stake+prize);
+        console.log(`balance of player 18: ${bal}`);
+      //   return
+        console.log('\n===LEACH===');
+      //   await printParams(19, signers[19].address, 19);
+      //   return   
+        await printParams(19,signers[19].address, 19);
+        await pool.connect(signers[19]).withdraw(19);
+        bal = await asset.balanceOf(signers[19].address);
+        expect(bal).to.eq(stake);
+        console.log(`balance of player 19: ${bal}`);     
+        console.log('========LOSERS=========')
+        for(let i=0; i<players-3; i++) {
+          await pool.connect(signers[i]).withdraw(i+1);
+          bal = await asset.balanceOf(signers[i].address);
+          expect(bal).to.eq(stake);
+          console.log(`balance of player ${i}: ${bal}`);
+        }
+        console.log('sponsorship:', await pool.getStake(signers[0].address,0));
+        console.log('pool balance:', await asset.balanceOf(vaultAddr));
+        await pool.connect(signers[0]).withdraw(0);
+      //   expect(await asset.balanceOf(signers[0])).to.eq(stake+stake)
+        expect(await vApi.totalAssets()).to.eq(0);
     });
     it.skip("#6: lower tvl", async() => {
-        //   const players = signers.length;
-          for (let i=5; i<9; i++) {
+        for (let i=5; i<9; i++) {
             await asset.mint(signers[i], 25);
             await asset.connect(signers[i]).approve(poolAddr, ethers.MaxUint256);
           }
@@ -353,7 +372,7 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
           const sh = await pool.getShares(signers[5].address, 5);
           console.log('SH2ASS:', await vApi.convertToAssets(sh));
     
-          await vault.generateYield(300);
+          await vault.simulateYield(vApiAddr, 300);
           /**yield = 100 * .03 = 3 */
           const yield_ = await pool.getYield();
           console.log('\nyield:', yield_);
@@ -372,14 +391,15 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
             await pool.connect(signers[i]).withdraw(i);
             expect(await asset.balanceOf(signers[i].address)).to.eq(25);
           }
-          await printParams(7, signers[7].address, 8);
-        //   await pool.connect(signers[7]).withdraw(signers[7].address, 7);
-        //   console.log('7 bal:', await asset.balanceOf(signers[7].address))
-          
-        //
+        //   await printParams(7, signers[7].address, 8);
+          await pool.connect(signers[7]).withdraw(8);
+        //   console.log('7 bal:', await asset.balanceOf(signers[7].address));
+          expect(await asset.balanceOf(signers[7].address)).to.eq(25);
+          await pool.connect(signers[8]).withdraw(8);
+        //   console.log('8 bal:', await asset.balanceOf(signers[8].address));
+          expect(await asset.balanceOf(signers[8].address)).to.eq(25);
     });
     it.skip("#7: low tvl", async() => {
-    //   const players = signers.length;
       for (let i=5; i<9; i++) {
         await asset.mint(signers[i], 225);
         await asset.connect(signers[i]).approve(poolAddr, ethers.MaxUint256);
@@ -395,7 +415,7 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
       const sh = await pool.getShares(signers[5].address, 5);
       console.log('SH2ASS:', await vApi.convertToAssets(sh));
 
-      await vault.generateYield(100);
+      await vault.simulateYield(vApiAddr, 100);
       /**yield = 900 * .01 = 9 */
       const yield_ = await pool.getYield();
       console.log('\nyield:', yield_);
@@ -422,40 +442,48 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
       console.log('pool bal:', await asset.balanceOf(vaultAddr))
     //
     });
-    it.skip('#8: high tvl', async() => {
+    it('#8: high tvl', async() => {
       const players = signers.length;
+      const stake = BigInt(1e27);
+      console.log('stake:', stake);
       for(let i=5; i<players; i++) {
-        await asset.mint(signers[i].address, BigInt(1e27));
+        await asset.mint(signers[i].address, stake);
         await asset.connect(signers[i]).approve(poolAddr, ethers.MaxUint256);
       }
       for(let i=0; i<5; i++) {
         await asset.mint(signers[i].address, BigInt(1e27-1e10));
       }
       for(let i=0; i<players-5; i++) {
-        await pool.connect(signers[i]).stake(i, BigInt(1e27));
+        await pool.connect(signers[i]).stake(i, stake);
       }
-      await pool.connect(signers[15]).stake(19, BigInt(1e27));
-      await pool.connect(signers[16]).stake(19, BigInt(1e27));
-      await pool.connect(signers[17]).stake(19, BigInt(1e27));
-      await pool.connect(signers[18]).stake(19, BigInt(1e27));
-      await pool.connect(signers[19]).stake(19, BigInt(1e27));
+      await pool.connect(signers[15]).stake(19, stake);
+      await pool.connect(signers[16]).stake(19, stake);
+      await pool.connect(signers[17]).stake(19, stake);
+      await pool.connect(signers[18]).stake(19, stake);
+      await pool.connect(signers[19]).stake(19, stake);
+    //   console.log('===================')
+    //   for(let i=0; i<players-5; i++) {
+    //     console.log(`bal of #${i}:`, await asset.balanceOf(signers[i].address));
+    //     console.log(`stake of #${i}`, await pool.getStake(signers[i].address, i));
+    //   }
+    //   console.log('===================')
       /**tvl = 2e51 */
       const tvl = await asset.balanceOf(vaultAddr);
       console.log('tvl-0:',tvl);
       /**yield = 6e49 */
-      await vault.generateYield(300);
+      await vault.simulateYield(vApiAddr, 300);
       console.log('yield', await pool.getYield());
       console.log('tvl-1:', await asset.balanceOf(vaultAddr));
       await resContr.connect(signers[0]).generateResult(19);
     //   let prizes: BigInt[] = [];
       let bal: bigint;
     //   19
-      await printParams(19, signers[19].address, 19);
+    //   await printParams(19, signers[19].address, 19);
       await pool.connect(signers[19]).withdraw(19);
       const bal19 = await asset.balanceOf(signers[19].address)
       console.log('19 bal', bal19);
     //   18
-      await printParams(18, signers[18].address, 19);
+    //   await printParams(18, signers[18].address, 19);
       await pool.connect(signers[18]).withdraw(19);
       console.log('18 bal', await asset.balanceOf(signers[18].address));
       console.log('\n======LOSERS======')
@@ -467,21 +495,23 @@ describe.skip("Pool scenarios test w/ AaveAPI", function () {
         console.log(`balance of player ${i}: ${bal}`);
       }
     //   17
-      await printParams(17, signers[17].address, 19);
+    //   await printParams(17, signers[17].address, 19);
       await pool.connect(signers[17]).withdraw(19);
       console.log('17 bal', await asset.balanceOf(signers[17].address));
     //   16
-      await printParams(16, signers[16].address, 19);
+    //   await printParams(16, signers[16].address, 19);
       await pool.connect(signers[16]).withdraw(19);
       console.log('16 bal', await asset.balanceOf(signers[16].address));
     // 15
-      await printParams(15, signers[15].address, 19);
+    //   await printParams(15, signers[15].address, 19);
       await pool.connect(signers[15]).withdraw(19);
       const bal15 = await asset.balanceOf(signers[15].address);
       console.log('15 bal', bal15);
       
       console.log('\ndiff:', bal19 - bal15)
+      expect(await asset.balanceOf(vaultAddr)).to.eq(0);
     //   console.log('1st prize:', prizes[0]);
     //   console.log('20th prize:', prizes[19]);
+
     });
 });

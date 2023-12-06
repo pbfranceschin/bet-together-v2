@@ -16,7 +16,7 @@ abstract contract BaseResultController is IResultController {
     _hasResult = false;
   }
 
-  function setResult (uint16 r) internal {
+  function _setResult (uint16 r) internal {
     require(!_hasResult, "Already has result.");
     require(r != 0, "Result can't be ZERO.");
 

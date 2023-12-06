@@ -1,9 +1,17 @@
 import { ethers } from "hardhat";
 import { 
-    Pool__factory, MockAsset__factory, MockVault__factory, MockVaultAPI__factory, MockController__factory,
+    Factory__factory ,Pool__factory, MockAsset__factory, MockVault__factory, MockVaultAPI__factory, MockController__factory,
     MockAavePool__factory, MockAavePoolAddressesProvider__factory, MockAToken__factory, AaveAPI__factory, MockAToken, MockAsset } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { BytesLike } from "ethers";
+
+
+export const deployFactory = async(deployer: SignerWithAddress) => {
+    const f = new Factory__factory(deployer);
+    const c = await f.deploy();
+    await c.waitForDeployment();
+    return c;
+}
 
 export const deployAsset = async(deployer: SignerWithAddress) => {
     const f = new MockAsset__factory(deployer);

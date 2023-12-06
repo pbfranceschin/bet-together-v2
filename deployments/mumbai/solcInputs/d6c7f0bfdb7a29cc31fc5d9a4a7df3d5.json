@@ -1,0 +1,42 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/BaseResultController.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.19;\n\nimport {IResultController} from \"./interfaces/IResultController.sol\";\n\ninterface IPool {\n  function closePool(uint16 result) external;\n}\n\nabstract contract BaseResultController is IResultController {\n  bool private _hasResult;\n  uint16 private _result;\n  bytes32[] private _outcomeNames;\n  \n  constructor () {\n    _hasResult = false;\n  }\n\n  function setResult (uint16 r) internal {\n    require(!_hasResult, \"Already has result.\");\n    require(r != 0, \"Result can't be ZERO.\");\n\n    _hasResult = true;\n    _result = r;\n    // \n    // IPool _pool = IPool(pool);\n    // _pool.closePool(r);\n    // \n    emit resultGenerated (address(this), r);\n  }\n  \n  /**slot ZERO MUST be left empty */\n  function _setOutcomes (bytes32[] memory outcomes) internal {\n    _outcomeNames = outcomes;\n  }\n\n  function _addOutcome (bytes32 outcomeName) internal {\n    _outcomeNames.push(outcomeName);\n  }\n\n  function hasResult () external view override returns (bool) {\n    return _hasResult;\n  }\n  \n  function getResult () external view override returns (uint256) {\n    return _result;\n  }\n\n  function getOutcomesCount () external view override returns (uint256) {\n    return _getOutcomesCount();\n  }\n  \n  function getOutcomeName (uint256 index) external view override returns (bytes32) {\n    return _outcomeNames[index];\n  }\n\n  function _getOutcomesCount () public view returns (uint256) {\n    return _outcomeNames.length;\n  }\n\n  function getGame () external view returns (bytes32) {\n    return _getGame();\n  }\n\n  function _getGame () internal view virtual returns (bytes32);\n}"
+    },
+    "contracts/interfaces/IResultController.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.19;\n\ninterface IResultController {\n\n  event resultGenerated (address indexed controller, uint256 indexed result);\n\n  function hasResult () external view returns (bool);\n  \n  function getResult () external view returns (uint256);\n  \n  function getOutcomesCount () external view returns (uint256);\n  \n  function getOutcomeName (uint256 index) external view returns (bytes32);\n  \n  function getGame () external view returns (bytes32);\n\n}"
+    },
+    "contracts/test/MockController.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.19;\n\nimport \"../BaseResultController.sol\";\n\ncontract MockController is BaseResultController {\n\n    address public owner;\n\n    bytes32 immutable private _game;\n    \n    modifier onlyOwner {\n        require(msg.sender == owner, \"only owner\");\n        _;\n    }\n\n    constructor(string memory game) {\n        owner = msg.sender;\n        _game = bytes32(abi.encodePacked(game));\n    }\n\n    function _getGame() internal view override returns(bytes32) {\n        return _game;\n    }\n\n    function generateResult(uint16 r) external {\n        setResult(r);\n    }\n\n\n    function setOutcomes(bytes32[] memory outcomes) external onlyOwner {\n        _setOutcomes(outcomes);\n    }\n\n}"
+    }
+  },
+  "settings": {
+    "evmVersion": "paris",
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}

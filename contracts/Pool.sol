@@ -180,6 +180,8 @@ contract Pool {
             totalStakes -= stake_;
             vaultAPI.withdraw(prize + stake_, msg.sender, address(this));
             yieldWithdrawn += prize;
+            _sharesByOutcome[outcome] -= shares;
+            _stakeByOutcome[outcome] -=stake_;
             emit Withdrawn(msg.sender, outcome, prize, stake_);
             return;
         }
@@ -199,9 +201,9 @@ contract Pool {
      * @param stake_ amount staked in `outcome`.
      */
     function previewPrize(uint16 outcome, uint256 shares, uint256 stake_) public view returns(uint256) {
-        uint256 totalYield = getYield() + yieldWithdrawn;
+        uint256 totalYield = getYield();
         uint256 indYield = _safeSub(vaultAPI.convertToAssets(shares), stake_);
-        uint256 outcomeYield = vaultAPI.convertToAssets(_sharesByOutcome[outcome]) - _stakeByOutcome[outcome];
+        uint256 outcomeYield = _safeSub(vaultAPI.convertToAssets(_sharesByOutcome[outcome]), _stakeByOutcome[outcome]);
         return outcomeYield > 0? (indYield * totalYield) / outcomeYield : 0;
     }
 
